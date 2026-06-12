@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.UUID;
 import java.util.Optional;
+import java.util.Map;
+import java.util.HashMap;
  
 @Service
 public class AuthService {
@@ -23,12 +25,29 @@ public class AuthService {
     public String register(String name,
                            String email,
                            String password) {
+        // Name validation
+    if (name == null || name.trim().isEmpty()) {
+        return "Name is required";
+    }
  
-        if (userRepository.findByEmail(email).isPresent()) {
-            return "Email already registered";
-        }
+    // Email validation
+    if (email == null ||
+            !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+        return "Invalid email format";
+    }
  
-        String otp = String.format("%06d",
+    // Duplicate email validation
+    if (userRepository.findByEmail(email).isPresent()) {
+        return "Email already registered";
+    }
+ 
+    // Password validation
+    if (!isValidPassword(password)) {
+        return "Password must contain uppercase, lowercase, number, special character and minimum 8 characters";
+    }
+ 
+    // Existing logic starts here
+       String otp = String.format("%06d",
                 new Random().nextInt(999999));
  
         User user = new User();
@@ -80,29 +99,41 @@ public class AuthService {
     return "OTP verified successfully";
 }
 
-public String login(String email, String password) {
+public Map<String, String> login(String email, String password) {
  
     Optional<User> optionalUser =
             userRepository.findByEmail(email);
  
     if (optionalUser.isEmpty()) {
-        return "Invalid email or password";
+        Map<String, String> response = new HashMap<>();
+response.put("message", "Invalid email or password");
+return response;
     }
  
     User user = optionalUser.get();
  
     if (!user.getIsVerified()) {
-        return "Please verify OTP first";
+        Map<String, String> response = new HashMap<>();
+response.put("message", "Please verify OTP first");
+return response;
     }
  
     if (!passwordEncoder.matches(
             password,
             user.getPasswordHash())) {
  
-        return "Invalid email or password";
+       Map<String, String> response = new HashMap<>();
+response.put("message", "Invalid email or password");
+return response;
     }
  
-    return "Login successful";
+   String token = jwtService.generateToken(email);
+ 
+Map<String, String> response = new HashMap<>();
+response.put("message", "Login successful");
+response.put("token", token);
+ 
+return response;
 }
 
 public String forgotPassword(String email) {
@@ -180,6 +211,39 @@ public String resetPassword(String email,
  
     return "Password reset successful";
 }
+
+public String resendOtp(String email) {
+ 
+    Optional<User> optionalUser =
+            userRepository.findByEmail(email);
+ 
+    if (optionalUser.isEmpty()) {
+        return "User not found";
+    }
+ 
+    User user = optionalUser.get();
+ 
+    if (Boolean.TRUE.equals(user.getIsVerified())) {
+        return "User already verified";
+    }
+ 
+    String otp = String.format(
+            "%06d",
+            new Random().nextInt(999999));
+ 
+    user.setOtp(otp);
+ 
+    user.setOtpExpiry(
+            LocalDateTime.now().plusMinutes(5));
+ 
+    userRepository.save(user);
+ 
+    return otp;
+}
+
+@Autowired
+JwtService jwtService;
+
  
  
 }

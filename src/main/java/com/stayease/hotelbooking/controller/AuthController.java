@@ -3,6 +3,7 @@ package com.stayease.hotelbooking.controller;
 import com.stayease.hotelbooking.dto.ForgotPasswordRequest;
 import com.stayease.hotelbooking.dto.LoginRequest;
 import com.stayease.hotelbooking.dto.RegisterRequest;
+import com.stayease.hotelbooking.dto.ResendOtpRequest;
 import com.stayease.hotelbooking.dto.ResetPasswordRequest;
 import com.stayease.hotelbooking.dto.VerifyOtpRequest;
 import com.stayease.hotelbooking.service.AuthService;
@@ -23,19 +24,19 @@ public class AuthController {
     public Map<String, String> register(
             @RequestBody RegisterRequest request) {
  
-        String otp = authService.register(
+        String result = authService.register(
                 request.getName(),
                 request.getEmail(),
                 request.getPassword());
  
         Map<String, String> response = new HashMap<>();
  
-        if ("Email already registered".equals(otp)) {
-            response.put("message", otp);
-        } else {
-            response.put("message", "OTP generated successfully");
-            response.put("otp", otp);
-        }
+       if (result.matches("\\d{6}")) {
+        response.put("message", "OTP generated successfully");
+        response.put("otp", result);
+    } else {
+        response.put("message", result);
+    }
  
         return response;
     }
@@ -59,17 +60,9 @@ public Map<String, String> verifyOtp(
 public Map<String, String> login(
         @RequestBody LoginRequest request) {
  
-    String result =
-            authService.login(
+     return authService.login(
                     request.getEmail(),
                     request.getPassword());
- 
-    Map<String, String> response =
-            new HashMap<>();
- 
-    response.put("message", result);
- 
-    return response;
 }
 
 @PostMapping("/forgot-password")
@@ -113,6 +106,43 @@ public Map<String, String> resetPassword(
             new HashMap<>();
  
     response.put("message", result);
+ 
+    return response;
+}
+@PostMapping("/resend-otp")
+public Map<String, String> resendOtp(
+        @RequestBody ResendOtpRequest request) {
+ 
+    String result =
+            authService.resendOtp(
+                    request.getEmail());
+ 
+    Map<String, String> response =
+            new HashMap<>();
+ 
+    if ("User not found".equals(result)
+            || "User already verified".equals(result)) {
+ 
+        response.put("message", result);
+ 
+    } else {
+ 
+        response.put(
+                "message",
+                "OTP generated successfully");
+ 
+        response.put("otp", result);
+    }
+ 
+    return response;
+}
+
+@PostMapping("/logout")
+public Map<String, String> logout() {
+ 
+    Map<String, String> response = new HashMap<>();
+ 
+    response.put("message", "Logout successful");
  
     return response;
 }
