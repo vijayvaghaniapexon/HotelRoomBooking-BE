@@ -3,7 +3,7 @@ package com.stayease.hotelbooking.service;
 import com.stayease.hotelbooking.entity.User;
 import com.stayease.hotelbooking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
  
 import java.time.LocalDateTime;
@@ -17,8 +17,8 @@ public class AuthService {
     @Autowired
     private UserRepository userRepository;
  
-    private final BCryptPasswordEncoder passwordEncoder =
-            new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
  
     public String register(String name,
                            String email,
