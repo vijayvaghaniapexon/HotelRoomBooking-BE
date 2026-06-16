@@ -117,10 +117,10 @@ return response;
 response.put("message", "Please verify OTP first");
 return response;
     }
+
+    boolean passwordMatches = passwordEncoder.matches(password, user.getPasswordHash());
  
-    if (!passwordEncoder.matches(
-            password,
-            user.getPasswordHash())) {
+    if (!passwordMatches) {
  
        Map<String, String> response = new HashMap<>();
 response.put("message", "Invalid email or password");
